@@ -12,6 +12,10 @@ import { CautionBanner } from '@/components/shared/CautionBanner'
 import type { BacktestConfig, StrategyId, RebalanceFreq } from '@/types/backtest'
 import { STRATEGY_META, FUND_INCEPTION } from '@/lib/constants'
 
+interface ConfigFormProps {
+  onSubmit: (config: BacktestConfig) => Promise<void>;
+}
+
 const STRATEGY_OPTIONS: StrategyId[] = ['max-sharpe', 'min-vol', 'hrp', 'var-scaled', 'equal-weight']
 
 const DEFAULT_CONFIG: BacktestConfig = {
@@ -24,8 +28,9 @@ const DEFAULT_CONFIG: BacktestConfig = {
   walkForward: true,
 }
 
-export function ConfigForm() {
+export function ConfigForm({ onSubmit }: ConfigFormProps) {
   const [config, setConfig] = useState<BacktestConfig>(DEFAULT_CONFIG)
+  const [loading, setLoading] = useState(false)
 
   function toggleStrategy(id: StrategyId) {
     setConfig(prev => ({
@@ -34,6 +39,17 @@ export function ConfigForm() {
         ? prev.strategies.filter(s => s !== id)
         : [...prev.strategies, id],
     }))
+  }
+
+  async function handleSubmit() {
+    setLoading(true)
+    try {
+      await onSubmit(config)
+    } catch (err) {
+      console.error('Backtest request failed', err)
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -198,15 +214,18 @@ export function ConfigForm() {
 
       {/* Submit */}
       <Button
+        onClick={handleSubmit}
         className="w-full bg-[#002060] text-white hover:bg-[#003087]"
-        disabled={config.strategies.length === 0}
+        disabled={config.strategies.length === 0 || loading}
       >
         <Play size={13} className="mr-2" />
-        Run Backtest
+        {loading ? 'Running...' : 'Run Backtest'}
       </Button>
-      <p className="text-center text-[10.5px] text-[#94A3B8]">
-        Backend connection coming soon
-      </p>
+      {!loading && (
+        <p className="text-center text-[10.5px] text-[#94A3B8]">
+          Results will display in the right‑hand panel
+        </p>
+      )}
     </div>
   )
 }

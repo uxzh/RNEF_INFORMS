@@ -1,77 +1,108 @@
-import { ConfigForm } from '@/components/backtest/ConfigForm'
-import { SectionTitle } from '@/components/shared/SectionTitle'
-import { MOCK_BACKTEST_RUNS } from '@/lib/mock-data'
-import { STRATEGY_META } from '@/lib/constants'
+'use client'
 
-export default function NewBacktestPage() {
-  const recentRun = MOCK_BACKTEST_RUNS[0]
+import { useState } from 'react'
+import { ConfigForm } from '@/components/backtest/ConfigForm'
+import { BacktestRunCard } from '@/components/backtest/BacktestRunCard'
+import { runBacktest } from '@/lib/api'
+import { STRATEGY_META } from '@/lib/constants'
+import type { BacktestConfig, BacktestRun } from '@/types/backtest'
+
+const STRATEGY_DESCRIPTIONS: Record<string, string> = {
+  'max-sharpe':   'Mean-variance optimization with Ledoit-Wolf covariance shrinkage.',
+  'hrp':          'Hierarchical Risk Parity — no matrix inversion, robust to estimation error.',
+  'var-scaled':   'Position sizes inversely proportional to 95% historical VaR.',
+  'equal-weight': 'Naive 1/N benchmark — equal allocation across all assets.',
+  'min-vol':      'Global minimum variance — focuses on reducing portfolio volatility.',
+}
+
+export default function BacktestPage() {
+  const [runs, setRuns] = useState<BacktestRun[]>([])
+  const [error, setError] = useState<string | null>(null)
+
+  const onSubmit = async (config: BacktestConfig) => {
+    setError(null)
+    try {
+      const run = await runBacktest(config)
+      setRuns(prev => [run, ...prev])
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Something went wrong')
+      throw err
+    }
+  }
+
+  const lastRun = runs[0] ?? null
 
   return (
-    <div className="mx-auto grid max-w-5xl grid-cols-[1fr_320px] gap-8">
-      {/* Left: Form */}
-      <div className="rounded-lg border border-[#E2E8F0] bg-white p-6 shadow-sm">
-        <SectionTitle
-          title="Configure Backtest"
-          sub="Set parameters and select strategies to simulate"
-          className="mb-6"
-        />
-        <ConfigForm />
+    <div className="mx-auto grid max-w-6xl grid-cols-[1fr_360px] gap-8 p-8">
+      {/* Left — config form */}
+      <div>
+        <p className="mb-1 text-[13px] text-[#64748B]">Set parameters and select strategies to simulate</p>
+        <ConfigForm onSubmit={onSubmit} />
+        {error && (
+          <p className="mt-3 rounded bg-red-50 px-3 py-2 text-[11px] text-red-600">{error}</p>
+        )}
+
+        {/* Results appear below form after first run */}
+        {runs.length > 0 && (
+          <div className="mt-8">
+            <h2 className="mb-4 text-[15px] font-bold text-[#1E293B]">Results</h2>
+            <div className="space-y-3">
+              {runs.map(run => (
+                <BacktestRunCard key={run.id} run={run} />
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Right: Info panel */}
-      <div className="space-y-4">
+      {/* Right — sidebar */}
+      <aside className="space-y-4">
         {/* Strategy Guide */}
-        <div className="rounded-lg border border-[#E2E8F0] bg-white p-5 shadow-sm">
-          <SectionTitle title="Strategy Guide" className="mb-4" />
+        <div className="rounded-xl border border-[#E2E8F0] bg-white p-5 shadow-sm">
+          <p className="mb-4 text-[13px] font-bold text-[#1E293B]">Strategy Guide</p>
           <div className="space-y-3">
-            {Object.values(STRATEGY_META)
-              .filter(m => m.id !== 'rnef-actual')
-              .map(meta => (
-                <div key={meta.id} className="flex items-start gap-2.5">
-                  <span
-                    className="mt-1 inline-block h-2 w-2 shrink-0 rounded-full"
-                    style={{ backgroundColor: meta.color }}
-                  />
-                  <div>
-                    <p className="text-[12px] font-semibold text-[#1E293B]">{meta.label}</p>
-                    <p className="text-[11px] text-[#64748B]">
-                      {meta.id === 'max-sharpe'   && 'Mean-variance optimization with Ledoit-Wolf covariance shrinkage.'}
-                      {meta.id === 'min-vol'       && 'Global minimum variance — focuses on reducing portfolio volatility.'}
-                      {meta.id === 'hrp'           && 'Hierarchical Risk Parity — no matrix inversion, robust to estimation error.'}
-                      {meta.id === 'var-scaled'    && 'Position sizes inversely proportional to 95% historical VaR.'}
-                      {meta.id === 'equal-weight'  && 'Naive 1/N benchmark — equal allocation across all assets.'}
-                    </p>
-                  </div>
+            {Object.entries(STRATEGY_META).map(([id, meta]) => (
+              <div key={id} className="flex gap-2.5">
+                <span
+                  className="mt-0.5 h-2.5 w-2.5 shrink-0 rounded-full"
+                  style={{ backgroundColor: meta.color }}
+                />
+                <div>
+                  <p className="text-[12px] font-semibold text-[#1E293B]">{meta.label}</p>
+                  <p className="text-[11px] text-[#64748B]">{STRATEGY_DESCRIPTIONS[id]}</p>
                 </div>
-              ))}
+              </div>
+            ))}
           </div>
         </div>
 
-        {/* Last Run Summary */}
-        <div className="rounded-lg border border-[#E2E8F0] bg-white p-5 shadow-sm">
-          <SectionTitle title="Last Run" sub={recentRun.createdAt} className="mb-3" />
-          <p className="text-[12px] font-semibold text-[#1E293B]">{recentRun.name}</p>
-          <p className="mt-1 text-[11px] text-[#64748B]">
-            {recentRun.strategies.length} strategies · {recentRun.rebalance} · {recentRun.txCost}bps
-          </p>
-          {recentRun.bestSharpe && (
-            <p className="mt-1.5 text-[11px] font-semibold text-[#2E8B57]">
-              Best Sharpe: {recentRun.bestSharpe.toFixed(2)}
+        {/* Last Run — only shown after a run */}
+        {lastRun && (
+          <div className="rounded-xl border border-[#E2E8F0] bg-white p-5 shadow-sm">
+            <p className="mb-3 text-[13px] font-bold text-[#1E293B]">Last Run</p>
+            <p className="text-[11px] text-[#94A3B8]">{lastRun.createdAt}</p>
+            <p className="mt-1 text-[13px] font-semibold text-[#1E293B]">{lastRun.name}</p>
+            <p className="mt-0.5 text-[11px] text-[#64748B]">
+              {lastRun.strategies.length} strategies · {lastRun.rebalance} · {lastRun.txCost}bps
             </p>
-          )}
-        </div>
+            {lastRun.bestSharpe && (
+              <p className="mt-2 text-[13px] font-bold text-[#2E8B57]">
+                Best Sharpe: {lastRun.bestSharpe.toFixed(2)}
+              </p>
+            )}
+          </div>
+        )}
 
-        {/* Data note */}
-        <div className="rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] p-4">
-          <p className="text-[11px] font-semibold text-[#1E293B]">Data Sources</p>
-          <ul className="mt-1.5 space-y-1 text-[11px] text-[#64748B]">
+        {/* Data Sources */}
+        <div className="rounded-xl border border-[#E2E8F0] bg-white p-5 shadow-sm">
+          <p className="mb-3 text-[13px] font-bold text-[#1E293B]">Data Sources</p>
+          <ul className="space-y-1 text-[11px] text-[#64748B]">
             <li>· Price data via yfinance</li>
             <li>· Risk-free rate via FRED TB3MS</li>
             <li>· Holdings from Excel tracker</li>
-            <li>· Inception: Oct 13, 2022</li>
           </ul>
         </div>
-      </div>
+      </aside>
     </div>
   )
 }
