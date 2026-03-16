@@ -1,6 +1,6 @@
 # RNEF Analytics — Backtesting Dashboard
 
-This is the frontend (the visual website part) of the Rice Renewable Energy Fund analytics tool. It lets the fund team run **backtests** — simulations that test how different investing strategies would have performed in the past using the fund's real stock holdings.
+[This is the frontend](https://rnef-informs.vercel.app) (the visual website part) of the Rice Renewable Energy Fund analytics tool. It lets the fund team run **backtests** — simulations that test how different investing strategies would have performed in the past using the fund's real stock holdings.
 
 > **For new contributors:** You do not need to understand all the code to get started. Just follow the steps below to run the website on your computer.
 
@@ -36,7 +36,7 @@ To stop the server, press `Ctrl + C` in the terminal.
 
 ## What You'll See
 
-The website has four pages, accessible from the left sidebar:
+The [website](https://rnef-informs.vercel.app) has four pages, accessible from the left sidebar:
 
 | Page | What it does |
 |---|---|
