@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Play } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -16,7 +16,7 @@ const STRATEGY_OPTIONS: StrategyId[] = ['max-sharpe', 'min-vol', 'hrp', 'var-sca
 
 const DEFAULT_CONFIG: BacktestConfig = {
   name: '',
-  strategies: ['max-sharpe', 'hrp'],
+  strategy: 'max-sharpe',
   dateRange: { start: FUND_INCEPTION, end: new Date().toISOString().split('T')[0] },
   txCostBps: 10,
   rebalance: 'monthly',
@@ -26,15 +26,22 @@ const DEFAULT_CONFIG: BacktestConfig = {
 
 export function ConfigForm() {
   const [config, setConfig] = useState<BacktestConfig>(DEFAULT_CONFIG)
+  const [universe, setUniverse] = useState<string[] | null>(null)
 
-  function toggleStrategy(id: StrategyId) {
-    setConfig(prev => ({
-      ...prev,
-      strategies: prev.strategies.includes(id)
-        ? prev.strategies.filter(s => s !== id)
-        : [...prev.strategies, id],
-    }))
-  }
+  // Read selected tickers from localStorage (set on /stocks page)
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem('rnef:selectedTickers')
+      if (raw) setUniverse(JSON.parse(raw))
+    } catch {}
+  }, [])
+
+  const universeLabel = (() => {
+    if (!universe) return null
+    if (universe.length === 0) return 'No stocks selected'
+    if (universe.length <= 3) return universe.join(', ')
+    return `${universe.slice(0, 3).join(', ')} +${universe.length - 3} more`
+  })()
 
   return (
     <div className="space-y-6">
@@ -51,33 +58,38 @@ export function ConfigForm() {
         />
       </div>
 
-      {/* Strategy Selection */}
+      {/* Optimization Model Selection */}
       <div className="space-y-2">
         <Label className="text-[11px] font-semibold uppercase tracking-wide text-[#64748B]">
-          Strategies
+          Optimization Model
         </Label>
         <div className="space-y-2">
           {STRATEGY_OPTIONS.map(id => {
             const meta = STRATEGY_META[id]
-            const checked = config.strategies.includes(id)
+            const selected = config.strategy === id
             return (
               <button
                 key={id}
                 type="button"
-                onClick={() => toggleStrategy(id)}
+                onClick={() => setConfig(prev => ({ ...prev, strategy: id }))}
                 className="flex w-full items-center gap-3 rounded-lg border px-3 py-2.5 text-left transition-colors"
                 style={{
-                  borderColor: checked ? meta.color + '60' : '#E2E8F0',
-                  backgroundColor: checked ? meta.color + '08' : 'transparent',
+                  borderColor: selected ? meta.color + '60' : '#E2E8F0',
+                  backgroundColor: selected ? meta.color + '08' : 'transparent',
                 }}
               >
+                {/* Radio circle */}
                 <div
-                  className="h-3 w-3 shrink-0 rounded-sm border-2 transition-colors"
-                  style={{
-                    borderColor: checked ? meta.color : '#CBD5E1',
-                    backgroundColor: checked ? meta.color : 'transparent',
-                  }}
-                />
+                  className="flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full border-2 transition-colors"
+                  style={{ borderColor: selected ? meta.color : '#CBD5E1' }}
+                >
+                  {selected && (
+                    <div
+                      className="h-1.5 w-1.5 rounded-full"
+                      style={{ backgroundColor: meta.color }}
+                    />
+                  )}
+                </div>
                 <div
                   className="h-2 w-2 shrink-0 rounded-full"
                   style={{ backgroundColor: meta.color }}
@@ -87,6 +99,22 @@ export function ConfigForm() {
             )
           })}
         </div>
+      </div>
+
+      {/* Universe summary */}
+      <div className="flex items-center justify-between rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2.5">
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-[#64748B]">Universe</p>
+          <p className="mt-0.5 text-[12.5px] font-medium text-[#1E293B]">
+            {universeLabel ?? 'All portfolio holdings'}
+          </p>
+        </div>
+        <a
+          href="/stocks"
+          className="text-[11px] font-semibold text-[#002060] hover:underline"
+        >
+          Change →
+        </a>
       </div>
 
       {/* Date Range */}
@@ -199,7 +227,6 @@ export function ConfigForm() {
       {/* Submit */}
       <Button
         className="w-full bg-[#002060] text-white hover:bg-[#003087]"
-        disabled={config.strategies.length === 0}
       >
         <Play size={13} className="mr-2" />
         Run Backtest

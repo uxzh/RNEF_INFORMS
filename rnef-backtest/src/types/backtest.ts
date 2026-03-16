@@ -47,7 +47,7 @@ export interface BacktestRun {
 
 export interface BacktestConfig {
   name: string
-  strategies: StrategyId[]
+  strategy: StrategyId
   dateRange: { start: string; end: string }
   txCostBps: number
   rebalance: RebalanceFreq
