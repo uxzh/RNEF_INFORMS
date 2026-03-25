@@ -9,7 +9,7 @@ export default async function StocksPage() {
     <div className="mx-auto max-w-2xl space-y-6 p-6">
       <SectionTitle
         title="Stock Universe"
-        subtitle="Select which holdings to include in your backtests."
+        sub="Select which holdings to include in your backtests."
       />
       <div className="rounded-xl border border-[#E2E8F0] bg-white p-5 shadow-sm">
         <StockSelector holdings={holdings} />
