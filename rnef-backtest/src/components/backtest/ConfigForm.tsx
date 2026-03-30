@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Play, X, Plus, Loader2 } from 'lucide-react'
+import { Play } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -11,82 +11,37 @@ import { Switch } from '@/components/ui/switch'
 import { CautionBanner } from '@/components/shared/CautionBanner'
 import type { BacktestConfig, StrategyId, RebalanceFreq } from '@/types/backtest'
 import { STRATEGY_META, FUND_INCEPTION } from '@/lib/constants'
-import { getPortfolioTickers } from '@/lib/portfolio'
-import { validateTickers } from '@/lib/api'
-
-interface ConfigFormProps {
-  onSubmit: (config: BacktestConfig) => Promise<void>;
-}
 
 const STRATEGY_OPTIONS: StrategyId[] = ['max-sharpe', 'min-vol', 'hrp', 'var-scaled', 'equal-weight']
 
-export function ConfigForm({ onSubmit }: ConfigFormProps) {
-  const [name, setName] = useState('')
-  const [strategy, setStrategy] = useState<StrategyId>('max-sharpe')
-  const [dateRange, setDateRange] = useState({ start: FUND_INCEPTION, end: new Date().toISOString().split('T')[0] })
-  const [txCostBps, setTxCostBps] = useState(10)
-  const [rebalance, setRebalance] = useState<RebalanceFreq>('monthly')
-  const [maxWeight, setMaxWeight] = useState(0.4)
-  const [walkForward, setWalkForward] = useState(true)
+const DEFAULT_CONFIG: BacktestConfig = {
+  name: '',
+  strategy: 'max-sharpe',
+  dateRange: { start: FUND_INCEPTION, end: new Date().toISOString().split('T')[0] },
+  txCostBps: 10,
+  rebalance: 'monthly',
+  maxWeight: 0.4,
+  walkForward: true,
+}
 
-  // Tickers: base comes from dashboard portfolio, extras added for this run only
-  const [baseTickers, setBaseTickers] = useState<string[]>([])
-  const [extraTickers, setExtraTickers] = useState<string[]>([])
-  const [tickerInput, setTickerInput] = useState('')
-  const [tickerError, setTickerError] = useState('')
-  const [validatingTicker, setValidatingTicker] = useState(false)
+export function ConfigForm() {
+  const [config, setConfig] = useState<BacktestConfig>(DEFAULT_CONFIG)
+  const [universe, setUniverse] = useState<string[] | null>(null)
 
-  const [loading, setLoading] = useState(false)
-
+  // Read selected tickers from localStorage (set on /stocks page)
   useEffect(() => {
-    setBaseTickers(getPortfolioTickers())
+    try {
+      const raw = localStorage.getItem('rnef:selectedTickers')
+      if (raw) setUniverse(JSON.parse(raw))
+    } catch {}
   }, [])
 
-  async function addExtraTicker() {
-    const t = tickerInput.trim().toUpperCase()
-    if (!t) return
-    if (baseTickers.includes(t) || extraTickers.includes(t)) {
-      setTickerError(`${t} is already in the list`)
-      return
-    }
-    setValidatingTicker(true)
-    setTickerError('')
-    const { invalid } = await validateTickers([t], dateRange.start, dateRange.end)
-    setValidatingTicker(false)
-    if (invalid.length) {
-      setTickerError(`${t} — no price data found in the selected date range.`)
-      return
-    }
-    setExtraTickers(prev => [...prev, t])
-    setTickerInput('')
-  }
-
-  function removeExtraTicker(t: string) {
-    setExtraTickers(prev => prev.filter(x => x !== t))
-  }
-
-  async function handleSubmit() {
-    setLoading(true)
-    const config: BacktestConfig = {
-      name,
-      strategies: [strategy],
-      tickers: [...baseTickers, ...extraTickers],
-      dateRange,
-      txCostBps,
-      rebalance,
-      maxWeight,
-      walkForward,
-    }
-    try {
-      await onSubmit(config)
-    } catch (err) {
-      console.error('Backtest request failed', err)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const allTickers = [...baseTickers, ...extraTickers]
+  const universeLabel = (() => {
+    if (!universe) return null
+    if (universe.length === 0) return 'No stocks selected'
+    if (universe.length <= 3) return universe.join(', ')
+    return `${universe.slice(0, 3).join(', ')} +${universe.length - 3} more`
+  })()
 
   return (
     <div className="space-y-6">
@@ -97,8 +52,8 @@ export function ConfigForm({ onSubmit }: ConfigFormProps) {
         </Label>
         <Input
           placeholder="e.g. Walk-Forward Q1 2026"
-          value={name}
-          onChange={e => setName(e.target.value)}
+          value={config.name}
+          onChange={e => setConfig(prev => ({ ...prev, name: e.target.value }))}
           className="text-[12.5px]"
         />
       </div>
@@ -106,17 +61,17 @@ export function ConfigForm({ onSubmit }: ConfigFormProps) {
       {/* Optimization Model Selection */}
       <div className="space-y-2">
         <Label className="text-[11px] font-semibold uppercase tracking-wide text-[#64748B]">
-          Strategy
+          Optimization Model
         </Label>
         <div className="space-y-2">
           {STRATEGY_OPTIONS.map(id => {
             const meta = STRATEGY_META[id]
-            const checked = strategy === id
+            const selected = config.strategy === id
             return (
               <button
                 key={id}
                 type="button"
-                onClick={() => setStrategy(id)}
+                onClick={() => setConfig(prev => ({ ...prev, strategy: id }))}
                 className="flex w-full items-center gap-3 rounded-lg border px-3 py-2.5 text-left transition-colors"
                 style={{
                   borderColor: selected ? meta.color + '60' : '#E2E8F0',
@@ -125,12 +80,16 @@ export function ConfigForm({ onSubmit }: ConfigFormProps) {
               >
                 {/* Radio circle */}
                 <div
-                  className="h-3 w-3 shrink-0 rounded-full border-2 transition-colors"
-                  style={{
-                    borderColor: checked ? meta.color : '#CBD5E1',
-                    backgroundColor: checked ? meta.color : 'transparent',
-                  }}
-                />
+                  className="flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full border-2 transition-colors"
+                  style={{ borderColor: selected ? meta.color : '#CBD5E1' }}
+                >
+                  {selected && (
+                    <div
+                      className="h-1.5 w-1.5 rounded-full"
+                      style={{ backgroundColor: meta.color }}
+                    />
+                  )}
+                </div>
                 <div
                   className="h-2 w-2 shrink-0 rounded-full"
                   style={{ backgroundColor: meta.color }}
@@ -142,61 +101,20 @@ export function ConfigForm({ onSubmit }: ConfigFormProps) {
         </div>
       </div>
 
-      {/* Ticker Universe */}
-      <div className="space-y-2">
-        <Label className="text-[11px] font-semibold uppercase tracking-wide text-[#64748B]">
-          Ticker Universe
-          <span className="ml-1.5 normal-case font-normal text-[#94A3B8]">({allTickers.length} stocks)</span>
-        </Label>
-
-        {/* Base tickers — locked, from dashboard */}
-        <div className="flex flex-wrap gap-1.5">
-          {baseTickers.map(t => (
-            <span
-              key={t}
-              className="rounded-md border border-[#E2E8F0] bg-[#F1F5F9] px-2 py-0.5 text-[10.5px] font-semibold text-[#64748B]"
-              title="From dashboard portfolio"
-            >
-              {t}
-            </span>
-          ))}
-          {/* Extra tickers — removable */}
-          {extraTickers.map(t => (
-            <span
-              key={t}
-              className="flex items-center gap-1 rounded-md border border-[#002060]/30 bg-[#002060]/5 px-2 py-0.5 text-[10.5px] font-semibold text-[#002060]"
-            >
-              {t}
-              <button onClick={() => removeExtraTicker(t)} className="hover:text-[#DC143C] transition-colors">
-                <X size={9} strokeWidth={2.5} />
-              </button>
-            </span>
-          ))}
+      {/* Universe summary */}
+      <div className="flex items-center justify-between rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2.5">
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-[#64748B]">Universe</p>
+          <p className="mt-0.5 text-[12.5px] font-medium text-[#1E293B]">
+            {universeLabel ?? 'All portfolio holdings'}
+          </p>
         </div>
-
-        {/* Add extra ticker */}
-        <div className="flex gap-2">
-          <Input
-            placeholder="Add extra ticker…"
-            value={tickerInput}
-            onChange={e => { setTickerInput(e.target.value.toUpperCase()); setTickerError('') }}
-            onKeyDown={e => e.key === 'Enter' && !validatingTicker && addExtraTicker()}
-            className="max-w-[180px] text-[12px]"
-            disabled={validatingTicker}
-          />
-          <button
-            onClick={addExtraTicker}
-            disabled={validatingTicker || !tickerInput.trim()}
-            className="flex h-9 items-center gap-1 rounded-md border border-[#E2E8F0] px-3 text-[11px] font-semibold text-[#64748B] hover:border-[#002060] hover:text-[#002060] transition-colors disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {validatingTicker ? <Loader2 size={11} className="animate-spin" /> : <Plus size={11} />}
-            {validatingTicker ? 'Checking…' : 'Add'}
-          </button>
-        </div>
-        {tickerError && <p className="text-[10px] text-[#DC143C]">{tickerError}</p>}
-        <p className="text-[10px] text-[#94A3B8]">
-          Grey = dashboard base · Blue = added for this run only
-        </p>
+        <a
+          href="/stocks"
+          className="text-[11px] font-semibold text-[#002060] hover:underline"
+        >
+          Change →
+        </a>
       </div>
 
       {/* Date Range */}
@@ -207,8 +125,8 @@ export function ConfigForm({ onSubmit }: ConfigFormProps) {
           </Label>
           <Input
             type="date"
-            value={dateRange.start}
-            onChange={e => setDateRange(prev => ({ ...prev, start: e.target.value }))}
+            value={config.dateRange.start}
+            onChange={e => setConfig(prev => ({ ...prev, dateRange: { ...prev.dateRange, start: e.target.value } }))}
             className="text-[12.5px]"
           />
         </div>
@@ -218,8 +136,8 @@ export function ConfigForm({ onSubmit }: ConfigFormProps) {
           </Label>
           <Input
             type="date"
-            value={dateRange.end}
-            onChange={e => setDateRange(prev => ({ ...prev, end: e.target.value }))}
+            value={config.dateRange.end}
+            onChange={e => setConfig(prev => ({ ...prev, dateRange: { ...prev.dateRange, end: e.target.value } }))}
             className="text-[12.5px]"
           />
         </div>
@@ -230,7 +148,10 @@ export function ConfigForm({ onSubmit }: ConfigFormProps) {
         <Label className="text-[11px] font-semibold uppercase tracking-wide text-[#64748B]">
           Rebalancing Frequency
         </Label>
-        <Select value={rebalance} onValueChange={v => setRebalance(v as RebalanceFreq)}>
+        <Select
+          value={config.rebalance}
+          onValueChange={v => setConfig(prev => ({ ...prev, rebalance: v as RebalanceFreq }))}
+        >
           <SelectTrigger className="text-[12.5px]">
             <SelectValue />
           </SelectTrigger>
@@ -248,9 +169,17 @@ export function ConfigForm({ onSubmit }: ConfigFormProps) {
           <Label className="text-[11px] font-semibold uppercase tracking-wide text-[#64748B]">
             Transaction Cost
           </Label>
-          <span className="text-[12.5px] font-semibold text-[#1E293B]">{txCostBps} bps</span>
+          <span className="text-[12.5px] font-semibold text-[#1E293B]">
+            {config.txCostBps} bps
+          </span>
         </div>
-        <Slider min={0} max={50} step={1} value={[txCostBps]} onValueChange={([v]) => setTxCostBps(v)} />
+        <Slider
+          min={0}
+          max={50}
+          step={1}
+          value={[config.txCostBps]}
+          onValueChange={([v]) => setConfig(prev => ({ ...prev, txCostBps: v }))}
+        />
         <div className="flex justify-between text-[10px] text-[#94A3B8]">
           <span>0 bps</span><span>50 bps</span>
         </div>
@@ -262,9 +191,17 @@ export function ConfigForm({ onSubmit }: ConfigFormProps) {
           <Label className="text-[11px] font-semibold uppercase tracking-wide text-[#64748B]">
             Max Position Weight
           </Label>
-          <span className="text-[12.5px] font-semibold text-[#1E293B]">{(maxWeight * 100).toFixed(0)}%</span>
+          <span className="text-[12.5px] font-semibold text-[#1E293B]">
+            {(config.maxWeight * 100).toFixed(0)}%
+          </span>
         </div>
-        <Slider min={10} max={60} step={5} value={[maxWeight * 100]} onValueChange={([v]) => setMaxWeight(v / 100)} />
+        <Slider
+          min={10}
+          max={60}
+          step={5}
+          value={[config.maxWeight * 100]}
+          onValueChange={([v]) => setConfig(prev => ({ ...prev, maxWeight: v / 100 }))}
+        />
         <div className="flex justify-between text-[10px] text-[#94A3B8]">
           <span>10%</span><span>60%</span>
         </div>
@@ -276,7 +213,10 @@ export function ConfigForm({ onSubmit }: ConfigFormProps) {
           <p className="text-[12.5px] font-medium text-[#1E293B]">Walk-Forward Simulation</p>
           <p className="text-[11px] text-[#64748B]">Prevents look-ahead bias</p>
         </div>
-        <Switch checked={walkForward} onCheckedChange={setWalkForward} />
+        <Switch
+          checked={config.walkForward}
+          onCheckedChange={v => setConfig(prev => ({ ...prev, walkForward: v }))}
+        />
       </div>
 
       <CautionBanner
@@ -286,18 +226,14 @@ export function ConfigForm({ onSubmit }: ConfigFormProps) {
 
       {/* Submit */}
       <Button
-        onClick={handleSubmit}
         className="w-full bg-[#002060] text-white hover:bg-[#003087]"
-        disabled={allTickers.length < 3 || loading}
       >
         <Play size={13} className="mr-2" />
-        {loading ? 'Running...' : 'Run Backtest'}
+        Run Backtest
       </Button>
-      {!loading && (
-        <p className="text-center text-[10.5px] text-[#94A3B8]">
-          Results will display below
-        </p>
-      )}
+      <p className="text-center text-[10.5px] text-[#94A3B8]">
+        Backend connection coming soon
+      </p>
     </div>
   )
 }
