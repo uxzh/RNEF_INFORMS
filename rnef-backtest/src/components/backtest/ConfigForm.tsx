@@ -103,7 +103,7 @@ export function ConfigForm({ onSubmit }: ConfigFormProps) {
         />
       </div>
 
-      {/* Strategy Selection */}
+      {/* Optimization Model Selection */}
       <div className="space-y-2">
         <Label className="text-[11px] font-semibold uppercase tracking-wide text-[#64748B]">
           Strategy
@@ -119,10 +119,11 @@ export function ConfigForm({ onSubmit }: ConfigFormProps) {
                 onClick={() => setStrategy(id)}
                 className="flex w-full items-center gap-3 rounded-lg border px-3 py-2.5 text-left transition-colors"
                 style={{
-                  borderColor: checked ? meta.color + '60' : '#E2E8F0',
-                  backgroundColor: checked ? meta.color + '08' : 'transparent',
+                  borderColor: selected ? meta.color + '60' : '#E2E8F0',
+                  backgroundColor: selected ? meta.color + '08' : 'transparent',
                 }}
               >
+                {/* Radio circle */}
                 <div
                   className="h-3 w-3 shrink-0 rounded-full border-2 transition-colors"
                   style={{
