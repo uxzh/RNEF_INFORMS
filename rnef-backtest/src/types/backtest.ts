@@ -16,21 +16,6 @@ export interface StrategyMeta {
   dashed?: boolean
 }
 
-export interface StrategyResult {
-  strategyId: StrategyId
-  weights: Record<string, number>
-  lastPrices: Record<string, number>
-  expectedReturn: number
-  expectedVolatility: number
-  sharpeRatio: number
-  maxDD: number
-  calmar: number
-  turnover: number
-  equityCurve: Array<{ date: string; value: number }>
-  drawdown: Array<{ date: string; drawdown: number }>
-  monthlyReturns: Array<{ year: number; month: number; value: number }>
-}
-
 export interface EquityCurvePoint {
   date: string
   [strategyId: string]: number | string
@@ -58,14 +43,11 @@ export interface BacktestRun {
   rebalance: RebalanceFreq
   bestStrategy?: StrategyId
   bestSharpe?: number
-  results?: StrategyResult[]
-  benchmarkCurve?: Array<{ date: string; value: number }>
 }
 
 export interface BacktestConfig {
   name: string
-  strategies: StrategyId[]
-  tickers: string[]
+  strategy: StrategyId
   dateRange: { start: string; end: string }
   txCostBps: number
   rebalance: RebalanceFreq
