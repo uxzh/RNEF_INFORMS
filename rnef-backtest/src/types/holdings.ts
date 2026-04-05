@@ -9,6 +9,7 @@ export interface Holding {
   stopLoss: number
   rrRatio: number
   irr: number
+  sector?: string
 }
 
 export interface PortfolioSummary {
