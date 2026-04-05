@@ -44,7 +44,6 @@ export function readHoldings(): Holding[] {
       .map(row => ({
         ticker:       String(colMap(row, ['ticker', 'symbol']) ?? '').trim(),
         company:      String(colMap(row, ['company', 'name', 'security']) ?? '').trim(),
-        sector:       String(colMap(row, ['sector', 'industry', 'category']) ?? '').trim() || undefined,
         weight:       safeNum(colMap(row, ['weight', 'allocation', '%'])),
         entryPrice:   safeNum(colMap(row, ['entry', 'cost', 'purchase'])),
         currentPrice: safeNum(colMap(row, ['current', 'price', 'last'])),

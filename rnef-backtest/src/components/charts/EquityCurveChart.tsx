@@ -13,36 +13,47 @@ import {
 import type { EquityCurvePoint, StrategyId } from '@/types/backtest'
 import { STRATEGY_META } from '@/lib/constants'
 
+const BENCHMARK_KEY = 'benchmark'
+const BENCHMARK_COLOR = '#D97706'
+
 interface EquityCurveChartProps {
   data: EquityCurvePoint[]
   strategies: StrategyId[]
+  benchmark?: { label: string }
 }
 
 interface TooltipProps {
   active?: boolean
   payload?: Array<{ name: string; value: number; color: string }>
   label?: string
+  benchmarkLabel?: string
 }
 
-function CustomTooltip({ active, payload, label }: TooltipProps) {
+function CustomTooltip({ active, payload, label, benchmarkLabel }: TooltipProps) {
   if (!active || !payload?.length) return null
   return (
     <div className="rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 shadow-md text-[11px]">
       <p className="mb-1.5 font-semibold text-[#64748B]">{label}</p>
-      {payload.map(entry => (
-        <div key={entry.name} className="flex items-center justify-between gap-4">
-          <span className="flex items-center gap-1.5" style={{ color: entry.color }}>
-            <span className="inline-block h-2 w-2 rounded-full" style={{ backgroundColor: entry.color }} />
-            {STRATEGY_META[entry.name as StrategyId]?.label ?? entry.name}
-          </span>
-          <span className="font-semibold text-[#1E293B]">{entry.value.toFixed(1)}</span>
-        </div>
-      ))}
+      {payload.map(entry => {
+        const displayName =
+          entry.name === BENCHMARK_KEY
+            ? (benchmarkLabel ?? 'Benchmark')
+            : (STRATEGY_META[entry.name as StrategyId]?.label ?? entry.name)
+        return (
+          <div key={entry.name} className="flex items-center justify-between gap-4">
+            <span className="flex items-center gap-1.5" style={{ color: entry.color }}>
+              <span className="inline-block h-2 w-2 rounded-full" style={{ backgroundColor: entry.color }} />
+              {displayName}
+            </span>
+            <span className="font-semibold text-[#1E293B]">{entry.value.toFixed(1)}</span>
+          </div>
+        )
+      })}
     </div>
   )
 }
 
-export function EquityCurveChart({ data, strategies }: EquityCurveChartProps) {
+export function EquityCurveChart({ data, strategies, benchmark }: EquityCurveChartProps) {
   return (
     <ResponsiveContainer width="100%" height={280}>
       <LineChart data={data} margin={{ top: 4, right: 16, left: -8, bottom: 0 }}>
@@ -60,12 +71,14 @@ export function EquityCurveChart({ data, strategies }: EquityCurveChartProps) {
           tickFormatter={(v: number) => `${v}`}
           domain={['auto', 'auto']}
         />
-        <Tooltip content={<CustomTooltip />} />
+        <Tooltip content={<CustomTooltip benchmarkLabel={benchmark?.label} />} />
         <Legend
           wrapperStyle={{ fontSize: '10px', paddingTop: '12px' }}
           formatter={(value: string) => (
             <span style={{ color: '#64748B' }}>
-              {STRATEGY_META[value as StrategyId]?.label ?? value}
+              {value === BENCHMARK_KEY
+                ? (benchmark?.label ?? 'Benchmark')
+                : (STRATEGY_META[value as StrategyId]?.label ?? value)}
             </span>
           )}
         />
@@ -84,6 +97,18 @@ export function EquityCurveChart({ data, strategies }: EquityCurveChartProps) {
             />
           )
         })}
+        {benchmark && (
+          <Line
+            key={BENCHMARK_KEY}
+            type="monotone"
+            dataKey={BENCHMARK_KEY}
+            stroke={BENCHMARK_COLOR}
+            strokeWidth={1.5}
+            strokeDasharray="4 2"
+            dot={false}
+            activeDot={{ r: 4, strokeWidth: 0 }}
+          />
+        )}
       </LineChart>
     </ResponsiveContainer>
   )
