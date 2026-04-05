@@ -8,9 +8,11 @@ def run_strategy(strategy_id: str, returns_df: pd.DataFrame, max_weight: float) 
     cov = returns_df.cov().values
 
     if strategy_id == "max-sharpe":
-        return max_sharpe.optimize(mean_ret, cov, max_weight)
+        result = max_sharpe.optimize(returns_df, max_weight=max_weight)
+        return result.values
     elif strategy_id == "min-vol":
-        return min_vol.optimize(mean_ret, cov, max_weight)
+        result = min_vol.optimize(returns_df, max_weight=max_weight)
+        return result.values
     elif strategy_id == "hrp":
         return hrp.optimize(returns_df)
     elif strategy_id == "var-scaled":

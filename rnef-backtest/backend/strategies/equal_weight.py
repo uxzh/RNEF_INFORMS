@@ -8,4 +8,3 @@ def optimize(returns_df: pd.DataFrame, **kwargs) -> pd.Series:
     n_assets = len(returns_df.columns)
     weights = np.ones(n_assets) / n_assets
     return pd.Series(weights, index=returns_df.columns)
-
