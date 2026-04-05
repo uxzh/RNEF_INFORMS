@@ -1,6 +1,7 @@
 export interface Holding {
   ticker: string
   company: string
+  sector?: string
   weight: number       // 0–1, e.g. 0.215
   entryPrice: number
   currentPrice: number

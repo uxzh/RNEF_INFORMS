@@ -1,0 +1,59 @@
+name: Vercel Preview (Fork PRs)
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  deploy-preview:
+    # Only runs for PRs from forks — Vercel's auto-deploy handles non-fork PRs
+    if: github.event.pull_request.head.repo.fork == true
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Vercel CLI
+        run: npm install -g vercel@latest
+
+      - name: Pull Vercel Environment
+        run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+        working-directory: ./rnef-backtest
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+      - name: Build
+        run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
+        working-directory: ./rnef-backtest
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+      - name: Deploy to Vercel
+        id: deploy
+        run: |
+          url=$(vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }})
+          echo "preview_url=$url" >> $GITHUB_OUTPUT
+        working-directory: ./rnef-backtest
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+      - name: Comment preview URL on PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `### Preview Deployment Ready\n\n🔗 **URL:** ${{ steps.deploy.outputs.preview_url }}\n\n*Deployed via GitHub Actions using project owner credentials.*`
+            })

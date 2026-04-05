@@ -1,15 +1,12 @@
-import Link from 'next/link'
-import { ArrowRight } from 'lucide-react'
 import type { SavedStrategy } from '@/types/backtest'
 import { STRATEGY_META } from '@/lib/constants'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 
 interface StrategyCardProps {
   strategy: SavedStrategy
-  href?: string
 }
 
-export function StrategyCard({ strategy, href }: StrategyCardProps) {
+export function StrategyCard({ strategy }: StrategyCardProps) {
   const meta = STRATEGY_META[strategy.type]
 
   return (
@@ -41,7 +38,7 @@ export function StrategyCard({ strategy, href }: StrategyCardProps) {
         </div>
       </div>
 
-      {/* Tags + Last Run + View link */}
+      {/* Tags + Last Run */}
       <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-[#F1F5F9] pt-3">
         <div className="flex flex-wrap gap-1">
           {strategy.tags.map(tag => (
@@ -53,17 +50,7 @@ export function StrategyCard({ strategy, href }: StrategyCardProps) {
             </span>
           ))}
         </div>
-        <div className="flex items-center gap-3">
-          <p className="text-[10px] text-[#94A3B8]">{strategy.lastRun}</p>
-          {href && (
-            <Link
-              href={href}
-              className="flex items-center gap-0.5 text-[10px] font-semibold text-[#002060] hover:underline"
-            >
-              View <ArrowRight size={10} />
-            </Link>
-          )}
-        </div>
+        <p className="text-[10px] text-[#94A3B8]">Last run: {strategy.lastRun}</p>
       </div>
     </div>
   )

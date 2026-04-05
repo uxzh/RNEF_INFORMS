@@ -1,6 +1,3 @@
-'use client'
-
-import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -8,11 +5,8 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { KpiCard } from '@/components/shared/KpiCard'
 import { SectionTitle } from '@/components/shared/SectionTitle'
 import { HoldingsTable } from '@/components/holdings/HoldingsTable'
-import { PortfolioUniverse } from '@/components/portfolio/PortfolioUniverse'
-import { BacktestRunCard } from '@/components/backtest/BacktestRunCard'
-import { MOCK_HOLDINGS, MOCK_PORTFOLIO_SUMMARY } from '@/lib/mock-data'
+import { readHoldings, readPortfolioSummary } from '@/lib/excel'
 import { NAV_COLORS } from '@/lib/constants'
-import type { BacktestRun } from '@/types/backtest'
 
 function fmtNav(n: number): string {
   return n.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })
@@ -22,27 +16,33 @@ function fmtPct(n: number, decimals = 1): string {
   return `${n >= 0 ? '+' : ''}${(n * 100).toFixed(decimals)}%`
 }
 
-function loadRecentRuns(): BacktestRun[] {
-  try {
-    const ids = JSON.parse(localStorage.getItem('backtest_run_ids') ?? '[]') as string[]
-    return ids.slice(0, 3).flatMap(id => {
-      try {
-        const raw = localStorage.getItem(`backtest_run_${id}`)
-        return raw ? [JSON.parse(raw) as BacktestRun] : []
-      } catch { return [] }
-    })
-  } catch { return [] }
+function BacktestRunSkeleton() {
+  return (
+    <div className="rounded-lg border border-[#E2E8F0] bg-white p-4 shadow-sm space-y-3">
+      <div className="flex items-start justify-between gap-2">
+        <div className="space-y-1.5">
+          <Skeleton className="h-3.5 w-40" />
+          <Skeleton className="h-2.5 w-24" />
+        </div>
+        <Skeleton className="h-5 w-16 rounded" />
+      </div>
+      <Skeleton className="h-2.5 w-52" />
+      <div className="flex gap-1.5">
+        <Skeleton className="h-5 w-24 rounded" />
+        <Skeleton className="h-5 w-16 rounded" />
+        <Skeleton className="h-5 w-20 rounded" />
+      </div>
+      <div className="flex items-center justify-between border-t border-[#F1F5F9] pt-3">
+        <Skeleton className="h-2.5 w-36" />
+        <Skeleton className="h-2.5 w-10" />
+      </div>
+    </div>
+  )
 }
 
 export default function DashboardPage() {
-  const summary = MOCK_PORTFOLIO_SUMMARY
-  const holdings = MOCK_HOLDINGS
-
-  const [recentRuns, setRecentRuns] = useState<BacktestRun[] | null>(null)
-
-  useEffect(() => {
-    setRecentRuns(loadRecentRuns())
-  }, [])
+  const holdings = readHoldings()
+  const summary = readPortfolioSummary()
 
   return (
     <div className="space-y-8">
@@ -74,22 +74,17 @@ export default function DashboardPage() {
         />
       </div>
 
-      {/* Portfolio Universe */}
-      <div className="rounded-lg border border-[#E2E8F0] bg-white p-5 shadow-sm">
-        <SectionTitle
-          title="Portfolio Universe"
-          sub="These tickers form the base universe for all backtests. Add or remove to customise."
-          className="mb-4"
-        />
-        <PortfolioUniverse />
-      </div>
-
       {/* Holdings Table */}
       <div className="rounded-lg border border-[#E2E8F0] bg-white p-5 shadow-sm">
         <SectionTitle
           title="Current Holdings"
-          sub={`${holdings.length} active positions`}
+          sub={`${holdings.length} active positions · Excel data`}
           className="mb-4"
+          action={
+            <Button variant="ghost" size="sm" className="h-7 text-[11px] text-[#64748B]">
+              Upload New Excel
+            </Button>
+          }
         />
         <HoldingsTable holdings={holdings} />
       </div>
@@ -99,13 +94,7 @@ export default function DashboardPage() {
         <div className="mb-4 flex items-center justify-between">
           <SectionTitle
             title="Recent Backtests"
-            sub={
-              recentRuns === null
-                ? 'Loading…'
-                : recentRuns.length === 0
-                ? 'No backtests run yet'
-                : `${recentRuns.length} recent run${recentRuns.length !== 1 ? 's' : ''}`
-            }
+            sub="No backtests run yet"
           />
           <Link href="/backtest">
             <Button size="sm" className="h-8 bg-[#002060] text-[11px] text-white hover:bg-[#003087]">
@@ -114,30 +103,11 @@ export default function DashboardPage() {
             </Button>
           </Link>
         </div>
-
-        {recentRuns === null && (
-          <div className="grid grid-cols-3 gap-4">
-            {[0, 1, 2].map(i => (
-              <Skeleton key={i} className="h-36 rounded-lg" />
-            ))}
-          </div>
-        )}
-
-        {recentRuns?.length === 0 && (
-          <div className="rounded-lg border border-dashed border-[#E2E8F0] bg-white py-10 text-center">
-            <p className="text-[12px] text-[#94A3B8]">
-              Run a backtest to see results here.
-            </p>
-          </div>
-        )}
-
-        {recentRuns && recentRuns.length > 0 && (
-          <div className="grid grid-cols-3 gap-4">
-            {recentRuns.map(run => (
-              <BacktestRunCard key={run.id} run={run} />
-            ))}
-          </div>
-        )}
+        <div className="grid grid-cols-3 gap-4">
+          <BacktestRunSkeleton />
+          <BacktestRunSkeleton />
+          <BacktestRunSkeleton />
+        </div>
       </div>
     </div>
   )
