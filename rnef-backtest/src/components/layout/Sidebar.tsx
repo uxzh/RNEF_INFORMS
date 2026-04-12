@@ -5,9 +5,7 @@ import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard,
   Play,
-  BarChart3,
   BookOpen,
-  RefreshCw,
   Leaf,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -62,17 +60,10 @@ export function Sidebar() {
       {/* Spacer */}
       <div className="flex-1" />
 
-      {/* Footer */}
+      {/* Footer — data is fetched live from Yahoo Finance on each backtest run */}
       <div className="border-t border-white/10 px-4 py-4">
-        <button
-          type="button"
-          className="mb-2.5 flex w-full items-center gap-2 rounded-md bg-white/8 px-3 py-2 text-[11px] font-semibold text-white/75 transition-colors hover:bg-white/12"
-        >
-          <RefreshCw size={11} />
-          Refresh Market Data
-        </button>
-        <p className="text-[10px] leading-tight text-white/40">Last updated: Feb 22, 2026</p>
-        <p className="mt-0.5 text-[10px] leading-tight text-white/25">yfinance · FRED</p>
+        <p className="text-[10px] leading-tight text-white/40">Price data fetched live via Yahoo Finance</p>
+        <p className="mt-0.5 text-[10px] leading-tight text-white/25">on each backtest run</p>
       </div>
     </aside>
   )
