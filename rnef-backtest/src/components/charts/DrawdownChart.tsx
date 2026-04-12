@@ -51,7 +51,18 @@ function CustomTooltip({ active, payload, label }: TooltipProps) {
   )
 }
 
+// turns "2023-04-15" into "Apr '23"
+function formatDate(dateStr: string) {
+  const d = new Date(dateStr + 'T00:00:00')
+  if (isNaN(d.getTime())) return dateStr
+  const month = d.toLocaleString('en-US', { month: 'short' })
+  const year = String(d.getFullYear()).slice(2)
+  return `${month} '${year}`
+}
+
 export function DrawdownChart({ data }: DrawdownChartProps) {
+  const tickInterval = data.length > 8 ? Math.floor(data.length / 8) : 0
+
   return (
     <ResponsiveContainer width="100%" height={140}>
       <AreaChart data={data} margin={{ top: 4, right: 16, left: -8, bottom: 0 }}>
@@ -62,7 +73,7 @@ export function DrawdownChart({ data }: DrawdownChartProps) {
           </linearGradient>
         </defs>
         <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" vertical={false} />
-        <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#94A3B8' }} axisLine={false} tickLine={false} />
+        <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#94A3B8' }} axisLine={false} tickLine={false} tickFormatter={formatDate} interval={tickInterval} />
         <YAxis
           tick={{ fontSize: 10, fill: '#94A3B8' }}
           axisLine={false}
