@@ -15,7 +15,7 @@ import { getPortfolioTickers } from '@/lib/portfolio'
 import { validateTickers } from '@/lib/api'
 
 interface ConfigFormProps {
-  onSubmit: (config: BacktestConfig) => Promise<void>;
+  onSubmit: (config: BacktestConfig, onProgress?: (stage: string, pct: number) => void) => Promise<void>;
 }
 
 const STRATEGY_OPTIONS: StrategyId[] = ['max-sharpe', 'min-vol', 'hrp', 'var-scaled', 'equal-weight']
@@ -37,6 +37,8 @@ export function ConfigForm({ onSubmit }: ConfigFormProps) {
   const [validatingTicker, setValidatingTicker] = useState(false)
 
   const [loading, setLoading] = useState(false)
+  const [progressStage, setProgressStage] = useState('')
+  const [progressPct, setProgressPct] = useState(0)
 
   useEffect(() => {
     setBaseTickers(getPortfolioTickers())
@@ -67,6 +69,8 @@ export function ConfigForm({ onSubmit }: ConfigFormProps) {
 
   async function handleSubmit() {
     setLoading(true)
+    setProgressStage('Starting...')
+    setProgressPct(0)
     const config: BacktestConfig = {
       name,
       strategies: [strategy],
@@ -78,11 +82,16 @@ export function ConfigForm({ onSubmit }: ConfigFormProps) {
       walkForward,
     }
     try {
-      await onSubmit(config)
+      await onSubmit(config, (stage, pct) => {
+        setProgressStage(stage)
+        setProgressPct(pct)
+      })
     } catch (err) {
       console.error('Backtest request failed', err)
     } finally {
       setLoading(false)
+      setProgressStage('')
+      setProgressPct(0)
     }
   }
 
@@ -292,6 +301,20 @@ export function ConfigForm({ onSubmit }: ConfigFormProps) {
         <Play size={13} className="mr-2" />
         {loading ? 'Running...' : 'Run Backtest'}
       </Button>
+
+      {/* progress bar shown during backtest */}
+      {loading && progressStage && (
+        <div className="space-y-1.5">
+          <div className="h-2 w-full rounded-full bg-[#E2E8F0] overflow-hidden">
+            <div
+              className="h-full rounded-full bg-[#002060] transition-all duration-500"
+              style={{ width: `${progressPct}%` }}
+            />
+          </div>
+          <p className="text-center text-[10.5px] text-[#64748B]">{progressStage}</p>
+        </div>
+      )}
+
       {!loading && (
         <p className="text-center text-[10.5px] text-[#94A3B8]">
           Results will display below
