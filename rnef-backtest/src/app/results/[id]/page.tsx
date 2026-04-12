@@ -3,7 +3,8 @@
 import { useParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, FileDown } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { SectionTitle } from '@/components/shared/SectionTitle'
 import { KpiCard } from '@/components/shared/KpiCard'
@@ -144,7 +145,15 @@ export default function ResultsPage() {
             {run.dateRange.start} → {run.dateRange.end} · {run.rebalance} rebalance · {run.txCost}bps tx cost
           </p>
         </div>
-        <div className="flex flex-wrap gap-1.5">
+        <div className="flex items-center gap-3">
+          <Button
+            onClick={() => window.print()}
+            className="h-8 bg-[#002060] text-[11px] text-white hover:bg-[#003087] print:hidden"
+          >
+            <FileDown size={12} className="mr-1.5" />
+            Generate Report
+          </Button>
+          <div className="flex flex-wrap gap-1.5">
           {run.strategies.map(id => (
             <span
               key={id}
@@ -161,6 +170,7 @@ export default function ResultsPage() {
               {STRATEGY_META[id]?.label}
             </span>
           ))}
+          </div>
         </div>
       </div>
 

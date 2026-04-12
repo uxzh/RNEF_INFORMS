@@ -97,6 +97,20 @@
   --sidebar-ring: oklch(0.213 0.087 263.6);
 }
 
+@media print {
+  /* Hide sidebar, topbar, and print button when generating PDF */
+  [data-sidebar],
+  nav,
+  .print\\:hidden {
+    display: none !important;
+  }
+  main {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+  }
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
