@@ -148,7 +148,7 @@ export default function ResultsPage() {
         <div className="flex items-center gap-3">
           <Button
             onClick={() => window.print()}
-            className="h-8 bg-[#002060] text-[11px] text-white hover:bg-[#003087] print:hidden"
+            className="h-8 bg-[#002060] text-[11px] text-white hover:bg-[#003087] no-print"
           >
             <FileDown size={12} className="mr-1.5" />
             Generate Report

@@ -101,7 +101,7 @@
   /* Hide sidebar, topbar, and print button when generating PDF */
   [data-sidebar],
   nav,
-  .print\\:hidden {
+  .no-print {
     display: none !important;
   }
   main {
