@@ -32,6 +32,8 @@ export function ConfigForm({ onSubmit }: ConfigFormProps) {
   // Tickers: base comes from dashboard portfolio, extras added for this run only
   const [baseTickers, setBaseTickers] = useState<string[]>([])
   const [extraTickers, setExtraTickers] = useState<string[]>([])
+  // tracks which base tickers the user toggled off for this run
+  const [excludedTickers, setExcludedTickers] = useState<Set<string>>(new Set())
   const [tickerInput, setTickerInput] = useState('')
   const [tickerError, setTickerError] = useState('')
   const [validatingTicker, setValidatingTicker] = useState(false)
@@ -67,6 +69,15 @@ export function ConfigForm({ onSubmit }: ConfigFormProps) {
     setExtraTickers(prev => prev.filter(x => x !== t))
   }
 
+  function toggleBaseTicker(t: string) {
+    setExcludedTickers(prev => {
+      const next = new Set(prev)
+      if (next.has(t)) next.delete(t)
+      else next.add(t)
+      return next
+    })
+  }
+
   async function handleSubmit() {
     setLoading(true)
     setProgressStage('Starting...')
@@ -74,7 +85,7 @@ export function ConfigForm({ onSubmit }: ConfigFormProps) {
     const config: BacktestConfig = {
       name,
       strategies: [strategy],
-      tickers: [...baseTickers, ...extraTickers],
+      tickers: [...baseTickers.filter(t => !excludedTickers.has(t)), ...extraTickers],
       dateRange,
       txCostBps,
       rebalance,
@@ -95,7 +106,7 @@ export function ConfigForm({ onSubmit }: ConfigFormProps) {
     }
   }
 
-  const allTickers = [...baseTickers, ...extraTickers]
+  const activeTickers = [...baseTickers.filter(t => !excludedTickers.has(t)), ...extraTickers]
 
   return (
     <div className="space-y-6">
@@ -152,22 +163,46 @@ export function ConfigForm({ onSubmit }: ConfigFormProps) {
 
       {/* Ticker Universe */}
       <div className="space-y-2">
-        <Label className="text-[11px] font-semibold uppercase tracking-wide text-[#64748B]">
-          Ticker Universe
-          <span className="ml-1.5 normal-case font-normal text-[#94A3B8]">({allTickers.length} stocks)</span>
-        </Label>
-
-        {/* Base tickers — locked, from dashboard */}
-        <div className="flex flex-wrap gap-1.5">
-          {baseTickers.map(t => (
-            <span
-              key={t}
-              className="rounded-md border border-[#E2E8F0] bg-[#F1F5F9] px-2 py-0.5 text-[10.5px] font-semibold text-[#64748B]"
-              title="From dashboard portfolio"
+        <div className="flex items-center justify-between">
+          <Label className="text-[11px] font-semibold uppercase tracking-wide text-[#64748B]">
+            Ticker Universe
+            <span className="ml-1.5 normal-case font-normal text-[#94A3B8]">({activeTickers.length} active)</span>
+          </Label>
+          {baseTickers.length > 0 && (
+            <button
+              type="button"
+              onClick={() => {
+                // if all are active, exclude all; otherwise include all
+                if (excludedTickers.size === 0) setExcludedTickers(new Set(baseTickers))
+                else setExcludedTickers(new Set())
+              }}
+              className="text-[10px] font-medium text-[#002060] hover:underline"
             >
-              {t}
-            </span>
-          ))}
+              {excludedTickers.size === 0 ? 'Deselect all' : 'Select all'}
+            </button>
+          )}
+        </div>
+
+        {/* Base tickers — click to toggle on/off */}
+        <div className="flex flex-wrap gap-1.5">
+          {baseTickers.map(t => {
+            const excluded = excludedTickers.has(t)
+            return (
+              <button
+                key={t}
+                type="button"
+                onClick={() => toggleBaseTicker(t)}
+                className={`rounded-md border px-2 py-0.5 text-[10.5px] font-semibold transition-colors cursor-pointer ${
+                  excluded
+                    ? 'border-[#E2E8F0] bg-white text-[#CBD5E1] line-through'
+                    : 'border-[#E2E8F0] bg-[#F1F5F9] text-[#64748B]'
+                }`}
+                title={excluded ? 'Click to include in backtest' : 'Click to exclude from backtest'}
+              >
+                {t}
+              </button>
+            )
+          })}
           {/* Extra tickers — removable */}
           {extraTickers.map(t => (
             <span
@@ -203,7 +238,7 @@ export function ConfigForm({ onSubmit }: ConfigFormProps) {
         </div>
         {tickerError && <p className="text-[10px] text-[#DC143C]">{tickerError}</p>}
         <p className="text-[10px] text-[#94A3B8]">
-          Grey = dashboard base · Blue = added for this run only
+          Click grey tickers to toggle · Blue = added for this run · Min 3 required
         </p>
       </div>
 
@@ -296,7 +331,7 @@ export function ConfigForm({ onSubmit }: ConfigFormProps) {
       <Button
         onClick={handleSubmit}
         className="w-full bg-[#002060] text-white hover:bg-[#003087]"
-        disabled={allTickers.length < 3 || loading}
+        disabled={activeTickers.length < 3 || loading}
       >
         <Play size={13} className="mr-2" />
         {loading ? 'Running...' : 'Run Backtest'}

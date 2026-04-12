@@ -53,7 +53,18 @@ function CustomTooltip({ active, payload, label, benchmarkLabel }: TooltipProps)
   )
 }
 
+// turns "2023-04-15" into "Apr '23"
+function formatDate(dateStr: string) {
+  const d = new Date(dateStr + 'T00:00:00')
+  const month = d.toLocaleString('en-US', { month: 'short' })
+  const year = String(d.getFullYear()).slice(2)
+  return `${month} '${year}`
+}
+
 export function EquityCurveChart({ data, strategies, benchmark }: EquityCurveChartProps) {
+  // show ~8 evenly spaced ticks so labels don't overlap
+  const tickInterval = data.length > 8 ? Math.floor(data.length / 8) : 0
+
   return (
     <ResponsiveContainer width="100%" height={280}>
       <LineChart data={data} margin={{ top: 4, right: 16, left: -8, bottom: 0 }}>
@@ -63,6 +74,8 @@ export function EquityCurveChart({ data, strategies, benchmark }: EquityCurveCha
           tick={{ fontSize: 10, fill: '#94A3B8' }}
           axisLine={false}
           tickLine={false}
+          tickFormatter={formatDate}
+          interval={tickInterval}
         />
         <YAxis
           tick={{ fontSize: 10, fill: '#94A3B8' }}
