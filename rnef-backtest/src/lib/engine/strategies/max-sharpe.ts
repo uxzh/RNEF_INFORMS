@@ -1,3 +1,10 @@
+/**
+ * Maximum Sharpe Ratio strategy — finds the allocation with best risk-adjusted return.
+ *
+ * Approach: tries the analytical tangency portfolio (cov^-1 * returns), then sweeps
+ * 48 risk-aversion values using projected gradient ascent. Keeps whichever has the
+ * highest Sharpe. This grid search avoids getting stuck in local optima.
+ */
 import { dot, matVecMul, vecMatVec, colMeans, norm1, solve } from '../matrix'
 import { regularizedCov, riskScale, projectToSimplex, capMaxWeight } from '../project'
 

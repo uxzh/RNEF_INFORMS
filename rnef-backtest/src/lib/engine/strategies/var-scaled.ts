@@ -1,7 +1,12 @@
+/**
+ * VaR-Scaled strategy — allocates more to lower-risk assets.
+ *
+ * The original Python version used scipy SLSQP, but since the objective
+ * (minimize weighted VaR) is linear, this is actually a simple LP:
+ * sort by VaR, fill lowest-risk assets to max_weight first.
+ * Produces the same result without needing a constrained optimizer.
+ */
 import { quantile } from '../matrix'
-
-// VaR-scaled positioning: allocate inversely to Value-at-Risk
-// solved analytically (linear objective + box bounds = sort-and-fill)
 export function optimize(returns: number[][], maxWeight: number): number[] {
   const n = returns[0].length
   const nRows = returns.length

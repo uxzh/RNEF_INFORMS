@@ -1,3 +1,11 @@
+/**
+ * Portfolio performance metrics — ported from Python metrics.py.
+ *
+ * computeMetrics: annualized return, volatility, and Sharpe ratio
+ * computeTimeSeries: equity curve, drawdown, monthly returns, max DD, Calmar
+ *
+ * All return values use 252 trading days/year for annualization.
+ */
 import { dot, colMeans, covMatrix, vecMatVec, cumProd, maxAccumulate } from './matrix'
 
 function applyTxCost(before: number[], after: number[], bps: number): number {

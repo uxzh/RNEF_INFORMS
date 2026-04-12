@@ -1,7 +1,12 @@
+/**
+ * Minimum Volatility strategy — finds the least-volatile portfolio.
+ *
+ * Uses projected gradient descent: repeatedly steps in the direction that
+ * reduces variance (gradient = cov @ weights), then projects back onto
+ * the feasible set. Step size = 1/max_eigenvalue ensures convergence.
+ */
 import { matVecMul, norm1 } from '../matrix'
 import { regularizedCov, riskScale, projectToSimplex, capMaxWeight } from '../project'
-
-// minimize portfolio variance via projected gradient descent
 export function optimize(returns: number[][], maxWeight: number): number[] {
   const n = returns[0].length
   if (n === 1) return [1]

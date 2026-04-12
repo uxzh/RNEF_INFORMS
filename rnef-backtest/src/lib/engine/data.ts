@@ -1,6 +1,13 @@
+/**
+ * Data fetching layer — replaces the Python yfinance backend.
+ *
+ * Uses yahoo-finance2 (npm) to fetch OHLCV data server-side.
+ * Tickers are fetched in parallel, aligned to a common date spine,
+ * and converted to daily returns for the optimization engine.
+ */
 import YahooFinance from 'yahoo-finance2'
 
-// v3 requires instantiation
+// yahoo-finance2 v3 requires instantiation
 const yf = new YahooFinance({ suppressNotices: ['ripHistorical'] })
 
 interface FetchResult {

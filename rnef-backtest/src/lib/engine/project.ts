@@ -1,4 +1,11 @@
-import { covMatrix, eigvalsh, clip } from './matrix'
+/**
+ * Shared optimization utilities used by max-sharpe and min-vol strategies.
+ *
+ * projectToSimplex: constrains portfolio weights to valid allocations (sum=1, each <= maxWeight)
+ * regularizedCov: makes covariance matrix invertible by adding a tiny ridge to the diagonal
+ * riskScale: computes gradient step size from the largest eigenvalue
+ */
+import { covMatrix, eigvalsh } from './matrix'
 
 // clamp max weight to valid range: at least 1/N, at most 1
 export function capMaxWeight(nAssets: number, maxWeight: number): number {
@@ -6,7 +13,8 @@ export function capMaxWeight(nAssets: number, maxWeight: number): number {
 }
 
 // project weights onto the simplex {w >= 0, w_i <= maxWeight, sum(w) = 1}
-// uses 80 iterations of bisection search
+// uses bisection: shift all weights by a constant until they sum to 1 after clipping
+// 80 iterations gives ~24 digits of precision, more than enough
 export function projectToSimplex(weights: number[], maxWeight: number): number[] {
   const n = weights.length
   let lo = Math.min(...weights) - maxWeight
