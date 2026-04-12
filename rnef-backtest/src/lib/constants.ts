@@ -6,7 +6,7 @@ export const STRATEGY_META: Record<StrategyId, StrategyMeta> = {
   'hrp':          { id: 'hrp',          label: 'HRP',               color: '#7C3AED' },
   'var-scaled':   { id: 'var-scaled',   label: 'VaR-Scaled',        color: '#0891B2', dashed: true },
   'equal-weight': { id: 'equal-weight', label: 'Equal Weight',      color: '#94A3B8', dashed: true },
-  'min-vol':      { id: 'min-vol',      label: 'Min Volatility',    color: '#uv1D4ED8' },
+  'min-vol':      { id: 'min-vol',      label: 'Min Volatility',    color: '#1D4ED8' },
 }
 
 export const FUND_INCEPTION = '2022-10-13'

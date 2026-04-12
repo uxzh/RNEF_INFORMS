@@ -102,10 +102,12 @@ export default function StrategyLibraryPage() {
               : `${entries.length} result${entries.length !== 1 ? 's' : ''} across ${new Set(entries.map(e => e.runId)).size} run${new Set(entries.map(e => e.runId)).size !== 1 ? 's' : ''}`
           }
         />
-        <Button className="h-8 bg-[#002060] text-[11px] text-white hover:bg-[#003087]" disabled>
-          <Plus size={12} className="mr-1.5" />
-          New Strategy
-        </Button>
+        <Link href="/backtest">
+          <Button className="h-8 bg-[#002060] text-[11px] text-white hover:bg-[#003087]">
+            <Plus size={12} className="mr-1.5" />
+            Run Backtest
+          </Button>
+        </Link>
       </div>
 
       {/* Search + Tabs */}
