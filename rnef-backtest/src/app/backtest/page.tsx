@@ -19,10 +19,13 @@ export default function BacktestPage() {
   const [runs, setRuns] = useState<BacktestRun[]>([])
   const [error, setError] = useState<string | null>(null)
 
-  const onSubmit = async (config: BacktestConfig) => {
+  const onSubmit = async (
+    config: BacktestConfig,
+    onProgress?: (stage: string, pct: number) => void,
+  ) => {
     setError(null)
     try {
-      const run = await runBacktest(config)
+      const run = await runBacktest(config, onProgress)
       setRuns(prev => [run, ...prev])
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong')
