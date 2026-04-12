@@ -21,11 +21,18 @@ export async function validateTickers(
 }
 
 export async function runBacktest(config: BacktestConfig): Promise<BacktestRun> {
-  const res = await fetch(`${API_URL}/backtest`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(config),
-  })
+  let res: Response
+  try {
+    res = await fetch(`${API_URL}/backtest`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(config),
+    })
+  } catch {
+    throw new Error(
+      'Could not reach the backend server. Make sure it is running on ' + API_URL
+    )
+  }
 
   if (!res.ok) {
     const data = await res.json().catch(() => ({}))
