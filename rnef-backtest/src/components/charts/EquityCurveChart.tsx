@@ -29,11 +29,17 @@ interface TooltipProps {
   benchmarkLabel?: string
 }
 
+function formatTooltipDate(dateStr: string) {
+  const d = new Date(dateStr + 'T00:00:00')
+  if (isNaN(d.getTime())) return dateStr
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+}
+
 function CustomTooltip({ active, payload, label, benchmarkLabel }: TooltipProps) {
   if (!active || !payload?.length) return null
   return (
     <div className="rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 shadow-md text-[11px]">
-      <p className="mb-1.5 font-semibold text-[#64748B]">{label}</p>
+      <p className="mb-1.5 font-semibold text-[#64748B]">{formatTooltipDate(label ?? '')}</p>
       {payload.map(entry => {
         const displayName =
           entry.name === BENCHMARK_KEY
