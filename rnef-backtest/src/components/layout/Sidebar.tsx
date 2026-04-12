@@ -15,7 +15,6 @@ import { cn } from '@/lib/utils'
 const NAV_ITEMS = [
   { href: '/',           icon: LayoutDashboard, label: 'Dashboard' },
   { href: '/backtest',   icon: Play,            label: 'New Backtest' },
-  { href: '/results',    icon: BarChart3,       label: 'Results' },
   { href: '/strategies', icon: BookOpen,        label: 'Strategy Library' },
 ]
 
